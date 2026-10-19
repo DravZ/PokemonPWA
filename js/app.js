@@ -105,21 +105,30 @@ async function loadPokemon() {
     }
 }
 
-searchInput.addEventListener("input", () => {
-    if (allPokemon.length === 0) {
+function initializeCatalog() {
+    if (!pokemonList || !catalogStatus || !searchInput || !loadMoreButton) {
+        console.error("No se pudo iniciar la Pokédex: faltan elementos requeridos en el HTML.");
         return;
     }
 
-    filterPokemon();
-    renderPokemon();
-});
+    searchInput.addEventListener("input", () => {
+        if (allPokemon.length === 0) {
+            return;
+        }
 
-loadMoreButton.addEventListener("click", () => {
-    visibleCount += PAGE_SIZE;
-    renderPokemon();
-});
+        filterPokemon();
+        renderPokemon();
+    });
 
-loadPokemon();
+    loadMoreButton.addEventListener("click", () => {
+        visibleCount += PAGE_SIZE;
+        renderPokemon();
+    });
+
+    loadPokemon();
+}
+
+initializeCatalog();
 
 if ("serviceWorker" in navigator && window.isSecureContext) {
     window.addEventListener("load", () => {
