@@ -3,18 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle | Coffee PWA</title>
+    <meta name="theme-color" content="#e3350d">
+    <meta name="description" content="Consulta los detalles y estadísticas de tu Pokémon favorito.">
+    <title>Detalle | Pokédex</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="images/icons/icon-192x192.png">
 </head>
 <body>
     <main>
-        <nav>
-            <h1>Coffee PWA</h1>
-        </nav>
-        <div class="container detail-container" id="coffee-detail">
-            <a class="btn-volver btn-volver-top" href="./index.html">Volver a home</a>
-        </div>
+        <header class="site-header">
+            <a class="brand" href="./index.html" aria-label="Pokédex, inicio">
+                <span class="brand-mark" aria-hidden="true">◉</span>
+                <span>Pokédex</span>
+            </a>
+            <a class="back-link" href="./index.html">← Volver a la Pokédex</a>
+        </header>
+
+        <section class="detail-container" id="pokemon-detail" aria-live="polite">
+            <p class="catalog-status">Cargando Pokémon...</p>
+        </section>
     </main>
     <script src="js/detalle.js"></script>
 </body>

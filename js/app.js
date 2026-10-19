@@ -1,133 +1,125 @@
-// Seleccionamos el container donde estarán las cards
-const container = document.querySelector(".container");
+const API_URL = "https://pokeapi.co/api/v2/pokemon-species?limit=100000&offset=0";
+const PAGE_SIZE = 24;
+const pokemonList = document.querySelector("#pokemon-list");
+const catalogStatus = document.querySelector("#catalog-status");
+const searchInput = document.querySelector("#pokemon-search");
+const loadMoreButton = document.querySelector("#load-more");
 
+let allPokemon = [];
+let filteredPokemon = [];
+let visibleCount = PAGE_SIZE;
 
-// Función reutilizable para crear una Card
-function crearCard(imagen, titulo, descripcion, descripcionExtendida) {
+function formatName(name) {
+    return name
+        .split("-")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+}
 
-    const card = document.createElement("div");
-    card.classList.add("card");
+function getPokemonId(url) {
+    const match = url.match(/\/pokemon-species\/(\d+)\/?$/);
+    return match ? Number(match[1]) : null;
+}
 
-    card.innerHTML = `
-    <img src="${imagen}" alt="${titulo}">
+function createPokemonCard(pokemon) {
+    const card = document.createElement("article");
+    card.className = "pokemon-card";
 
-    <div class="card-content">
-        <h2>${titulo}</h2>
-        <p>${descripcion}</p>
-        <button class="btn-ver-mas" type="button">Ver más</button>
-    </div>
-`;
-    const button = card.querySelector(".btn-ver-mas");
-    button.dataset.descripcion = descripcionExtendida;
-    button.dataset.titulo = titulo;
-    button.dataset.imagen = imagen;
+    const image = document.createElement("img");
+    image.className = "pokemon-image";
+    image.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`;
+    image.alt = formatName(pokemon.name);
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.addEventListener("error", () => image.classList.add("image-unavailable"), { once: true });
+
+    const number = document.createElement("span");
+    number.className = "pokemon-number";
+    number.textContent = `N.º ${String(pokemon.id).padStart(4, "0")}`;
+
+    const heading = document.createElement("h2");
+    heading.className = "pokemon-name";
+    heading.textContent = formatName(pokemon.name);
+
+    const link = document.createElement("a");
+    link.className = "card-link";
+    link.href = `./detalle.html?id=${pokemon.id}`;
+    link.setAttribute("aria-label", `Ver detalles de ${formatName(pokemon.name)}`);
+    link.append(image, number, heading);
+    card.append(link);
     return card;
 }
 
+function renderPokemon() {
+    pokemonList.replaceChildren();
 
-// Creamos 10 cards reutilizando la misma función
-container.appendChild(
-    crearCard(
-        "images/coffee1.jpg",
-        "Espresso",
-        "Un café intenso y tradicional.",
-        "El espresso se prepara haciendo pasar agua caliente a presión por café finamente molido. Su extracción breve concentra los aromas y produce una capa dorada de crema. Es la base de muchas bebidas de café y se disfruta mejor recién preparado."
-    )
-);
+    const visiblePokemon = filteredPokemon.slice(0, visibleCount);
+    pokemonList.append(...visiblePokemon.map(createPokemonCard));
 
-container.appendChild(
-    crearCard(
-        "images/coffee2.jpg",
-        "Cappuccino",
-        "Café con leche y espuma.",
-        "El cappuccino combina espresso, leche caliente y una capa generosa de espuma cremosa. Su equilibrio entre intensidad y suavidad lo convierte en una bebida clásica para cualquier momento del día."
-    )
-);
+    if (filteredPokemon.length === 0) {
+        catalogStatus.textContent = "No se encontraron Pokémon con ese nombre.";
+    } else {
+        catalogStatus.textContent = `Mostrando ${visiblePokemon.length} de ${filteredPokemon.length} Pokémon, ordenados de la A a la Z.`;
+    }
 
-container.appendChild(
-    crearCard(
-        "images/coffee3.jpg",
-        "Latte",
-        "Café suave con leche.",
-        "El latte mezcla uno o dos shots de espresso con abundante leche vaporizada y una fina capa de espuma. El resultado es una bebida suave, aterciopelada y fácil de personalizar con distintos sabores."
-    )
-);
+    loadMoreButton.hidden = visibleCount >= filteredPokemon.length;
+}
 
-container.appendChild(
-    crearCard(
-        "images/coffee4.jpg",
-        "Americano",
-        "Espresso combinado con agua caliente.",
-        "El café americano se prepara añadiendo agua caliente a un espresso. Conserva el carácter aromático del café, pero ofrece una taza más larga y ligera, ideal para saborear con calma."
-    )
-);
+function filterPokemon() {
+    const query = searchInput.value.trim().toLocaleLowerCase("es");
+    filteredPokemon = allPokemon.filter((pokemon) => pokemon.name.toLocaleLowerCase("es").includes(query));
+    visibleCount = PAGE_SIZE;
+}
 
-container.appendChild(
-    crearCard(
-        "images/coffee5.jpg",
-        "Mocha",
-        "Café combinado con chocolate.",
-        "El mocha une espresso, chocolate y leche vaporizada en una bebida de sabor profundo y dulce. Puede terminarse con espuma de leche o un toque de cacao para realzar sus notas achocolatadas."
-    )
-);
+async function loadPokemon() {
+    catalogStatus.textContent = "Cargando Pokémon...";
+    loadMoreButton.hidden = true;
 
-container.appendChild(
-    crearCard(
-        "images/coffee6.jpg",
-        "Macchiato",
-        "Espresso con un toque de leche.",
-        "Macchiato significa marcado: un espresso al que se añade una pequeña cantidad de leche o espuma. Ese toque suaviza el café sin ocultar su intensidad ni sus aromas."
-    )
-);
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            throw new Error(`PokéAPI respondió con el estado ${response.status}.`);
+        }
 
-container.appendChild(
-    crearCard(
-        "images/coffee7.jpg",
-        "Cold Brew",
-        "Café preparado en frío.",
-        "El cold brew se obtiene dejando café molido en agua fría durante varias horas. La extracción lenta crea una bebida refrescante, de perfil suave y baja acidez, que se sirve con hielo."
-    )
-);
+        const data = await response.json();
+        if (!Array.isArray(data.results)) {
+            throw new Error("La respuesta de PokéAPI no contiene la lista de Pokémon esperada.");
+        }
 
-container.appendChild(
-    crearCard(
-        "images/coffee8.jpg",
-        "Frappé",
-        "Café frío y refrescante.",
-        "El frappé es una bebida fría de café mezclado con hielo hasta lograr una textura espumosa. Se puede acompañar con leche y ajustar su dulzor para disfrutarlo como una opción refrescante."
-    )
-);
+        allPokemon = data.results
+            .map((pokemon) => ({ ...pokemon, id: getPokemonId(pokemon.url) }))
+            .filter((pokemon) => pokemon.id !== null)
+            .sort((first, second) => first.name.localeCompare(second.name, "es", { sensitivity: "base" }));
+        filterPokemon();
+        renderPokemon();
+    } catch (error) {
+        console.error("No se pudo cargar la Pokédex:", error);
+        catalogStatus.textContent = "No se pudieron cargar los Pokémon. Comprueba tu conexión e inténtalo de nuevo.";
 
-container.appendChild(
-    crearCard(
-        "images/coffee9.jpg",
-        "Irish Coffee",
-        "Café preparado al estilo irlandés.",
-        "El Irish coffee combina café caliente con whiskey irlandés y azúcar, coronado tradicionalmente con una capa de crema. Sus sabores cálidos y tostados hacen de esta una bebida para disfrutar despacio."
-    )
-);
+        const retryButton = document.createElement("button");
+        retryButton.className = "load-more";
+        retryButton.type = "button";
+        retryButton.textContent = "Reintentar";
+        retryButton.addEventListener("click", loadPokemon, { once: true });
+        pokemonList.replaceChildren(retryButton);
+    }
+}
 
-container.appendChild(
-    crearCard(
-        "images/coffee10.jpg",
-        "Caramel Coffee",
-        "Café con un delicioso toque de caramelo.",
-        "Esta bebida combina café recién preparado con caramelo, que aporta notas dulces y ligeramente tostadas. Puede servirse con leche vaporizada para obtener una textura más cremosa."
-    )
-);
+searchInput.addEventListener("input", () => {
+    if (allPokemon.length === 0) {
+        return;
+    }
 
-container.addEventListener("click", (event) => {
-    const button = event.target.closest(".btn-ver-mas");
-    if (!button) return;
-
-    sessionStorage.setItem("cafeSeleccionado", JSON.stringify({
-        titulo: button.dataset.titulo,
-        descripcion: button.dataset.descripcion,
-        imagen: button.dataset.imagen
-    }));
-    const detailUrl = new URL("./detalle.html", window.location.href);
-    window.location.assign(detailUrl.href);
+    filterPokemon();
+    renderPokemon();
 });
+
+loadMoreButton.addEventListener("click", () => {
+    visibleCount += PAGE_SIZE;
+    renderPokemon();
+});
+
+loadPokemon();
 
 if ("serviceWorker" in navigator && window.isSecureContext) {
     window.addEventListener("load", () => {
