@@ -1,4 +1,4 @@
-const CACHE_NAME = "pokemon-pwa-v2";
+const CACHE_NAME = "pokemon-pwa-v3";
 const APP_SHELL = [
     "./",
     "./index.html",

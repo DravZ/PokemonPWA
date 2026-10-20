@@ -4,10 +4,14 @@ const pokemonList = document.querySelector("#pokemon-list");
 const catalogStatus = document.querySelector("#catalog-status");
 const searchInput = document.querySelector("#pokemon-search");
 const loadMoreButton = document.querySelector("#load-more");
+const installButton = document.querySelector("#install-app");
+const installStatus = document.querySelector("#install-status");
 
 let allPokemon = [];
 let filteredPokemon = [];
 let visibleCount = PAGE_SIZE;
+let deferredInstallPrompt = null;
+let isAppInstalled = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 
 function formatName(name) {
     return name
@@ -129,6 +133,69 @@ function initializeCatalog() {
 }
 
 initializeCatalog();
+
+function updateInstallButton(installed) {
+    isAppInstalled = installed;
+    installButton.textContent = installed ? "Desinstalar" : "Instalar";
+    installButton.classList.toggle("is-installed", installed);
+    installButton.setAttribute("aria-label", installed ? "Desinstalar Pokédex" : "Instalar Pokédex");
+}
+
+async function detectInstalledApp() {
+    if (!("getInstalledRelatedApps" in navigator)) {
+        return;
+    }
+
+    try {
+        const installedApps = await navigator.getInstalledRelatedApps();
+        if (installedApps.some((app) => app.platform === "webapp")) {
+            updateInstallButton(true);
+        }
+    } catch (error) {
+        console.error("No se pudo comprobar si la Pokédex está instalada:", error);
+    }
+}
+
+if (installButton && installStatus) {
+    updateInstallButton(isAppInstalled);
+    detectInstalledApp();
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+    });
+
+    window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        updateInstallButton(true);
+        installStatus.textContent = "La Pokédex se instaló correctamente.";
+    });
+
+    installButton.addEventListener("click", async () => {
+        if (isAppInstalled) {
+            installStatus.textContent = "Para desinstalar la Pokédex, usa el menú de la aplicación o la configuración de aplicaciones de tu dispositivo.";
+            return;
+        }
+
+        if (!deferredInstallPrompt) {
+            installStatus.textContent = "Si tu navegador admite la instalación, abre su menú y elige “Instalar aplicación” o “Agregar a pantalla principal”.";
+            return;
+        }
+
+        try {
+            const installPrompt = deferredInstallPrompt;
+            deferredInstallPrompt = null;
+            await installPrompt.prompt();
+            const choice = await installPrompt.userChoice;
+            installStatus.textContent = choice.outcome === "accepted"
+                ? "Sigue las indicaciones del navegador para completar la instalación."
+                : "La instalación se canceló.";
+        } catch (error) {
+            console.error("No se pudo iniciar la instalación de la Pokédex:", error);
+            installStatus.textContent = "No se pudo iniciar la instalación. Inténtalo desde el menú del navegador.";
+        }
+    });
+}
 
 if ("serviceWorker" in navigator && window.isSecureContext) {
     window.addEventListener("load", () => {

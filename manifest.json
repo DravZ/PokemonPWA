@@ -5,6 +5,12 @@
     "start_url": "./index.html",
     "scope": "./",
     "display": "standalone",
+    "related_applications": [
+        {
+            "platform": "webapp",
+            "url": "https://dravz.github.io/PokemonPWA/manifest.json"
+        }
+    ],
     "background_color": "#f4f7fa",
     "theme_color": "#e3350d",
     "orientation": "portrait-primary",

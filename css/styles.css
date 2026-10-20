@@ -132,6 +132,50 @@ h1 {
     box-shadow: 0 0 0 3px rgba(227, 53, 13, 0.12);
 }
 
+.install-app {
+    display: inline-flex;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+    padding: 0 28px;
+    border: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #39a86c, #21854f);
+    box-shadow: 0 6px 16px rgba(33, 133, 79, 0.2);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.install-app:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 9px 20px rgba(33, 133, 79, 0.26);
+}
+
+.install-app.is-installed {
+    background: linear-gradient(135deg, #bd7777, #a95f5f);
+    box-shadow: 0 4px 12px rgba(120, 69, 69, 0.16);
+}
+
+.install-app.is-installed:hover {
+    box-shadow: 0 6px 15px rgba(120, 69, 69, 0.22);
+}
+
+.install-app:focus-visible {
+    outline: 3px solid rgba(227, 53, 13, 0.55);
+    outline-offset: 3px;
+}
+
+.install-status {
+    min-height: 1.25em;
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
 .catalog-status {
     min-height: 24px;
     margin: 28px 0 18px;
